@@ -3,10 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>RT Simulator · Jadi Ketua RT selama 52 minggu</title>
+<title>Ketua RT · Jadi Ketua RT selama 52 minggu</title>
 <meta name="description" content="Coba jadi Ketua RT dan lihat keputusanmu mengubah kehidupan warga. 52 minggu, 15 warga, setiap keputusan punya konsekuensi.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="RT Simulator">
+<meta property="og:title" content="Ketua RT">
+<meta property="og:site_name" content="Ketua RT">
+<link rel="icon" href="assets/favicon/favicon.png" type="image/png">
+<link rel="icon" href="assets/favicon/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/favicon/favicon.png">
 <meta property="og:description" content="Coba jadi Ketua RT dan lihat keputusanmu mengubah kehidupan warga.">
 <meta property="og:locale" content="id_ID">
 <meta name="theme-color" content="#ecebe8">
@@ -708,6 +712,17 @@ button.kas-cell { min-height: 32px; min-width: 44px; border: 1px dashed var(--co
 .bg-tunda[hidden] { display: none; }
 @media (prefers-reduced-motion: reduce) { .bg-screen.is-ringing, .bg-screen.is-ringing .bg-ico { animation: none; } .bg-screen.is-shake { animation: none; outline: 3px solid #fff; } }
 
+/* ---------- Home (layar awal) v0.9.1: logo + background aset repo ---------- */
+.start { padding-top: 28px; }
+.screen:has(.start) { background-color: var(--color-bg-canvas); background-image: url("assets/home/background-home-ketua-rt.svg"); background-size: cover; background-position: center top; background-repeat: no-repeat; }
+.start-logo { margin: 8px auto 4px; width: min(240px, 70%); line-height: 0; }
+.start-logo img { display: block; width: 100%; height: auto; }
+.start-logo.is-text { width: auto; line-height: var(--leading-heading); font-size: var(--text-heading); font-weight: 700; letter-spacing: -.03em; text-align: center; }
+.start > p.muted { background: var(--color-bg-surface); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-cards); padding: 12px 16px; }
+.field-err { color: var(--color-danger-text); font-size: var(--text-body-sm); }
+.input[aria-invalid="true"] { border-color: var(--color-danger-text); }
+.start > .btn--ghost { background: var(--color-bg-surface); border: 1px solid var(--color-border-subtle); }
+
 </style>
 </head>
 <body>
@@ -719,7 +734,7 @@ button.kas-cell { min-height: 32px; min-width: 44px; border: 1px dashed var(--co
     <div class="overlay" id="overlay" hidden></div>
     <div class="toasts" id="toasts" aria-live="polite"></div>
   </div>
-  <p class="caption">RT Simulator · prototype v0.9 · data tersimpan di browser ini</p>
+  <p class="caption">Ketua RT · v0.9.1 · data tersimpan di browser ini</p>
 </div>
 <script>
 /* RT Simulator v2 — utilitas, konfigurasi, kalender.
@@ -2043,7 +2058,9 @@ RT.data.speechPoints = [
 RT.data.endings = [
   { id: 'chaos', title: 'RT Chaos', icon: '🌪️', subtitle: 'Warga tidak lagi percaya pada keputusan RT.',
     text: 'Setahun terasa seperti sepuluh tahun. Grup warga penuh debat, rapat sering ricuh, dan nama-nama calon Ketua RT baru sudah beredar. Tapi kamu bertahan sampai akhir, dan belajar bahwa memimpin lingkungan jauh lebih sulit dari kelihatannya.',
-    when: { any: [{ trust: { max: 38 } }, { satisfaction: { max: 38 } }, { score: { max: 45 } }, { conflicts: { min: 5 } }] } },
+    when: { any: [{ trust: { max: 38 } }, { satisfaction: { max: 38 } }, { score: { max: 45 } },
+      /* Konflik tinggi saja tidak cukup: harus disertai tanda warga mulai hilang percaya (ambang yang sama dengan event 'calon_ketua'). */
+      { conflicts: { min: 5 }, any: [{ trust: { max: 55 } }, { satisfaction: { max: 52 } }] }] } },
   { id: 'teladan', title: 'RT Teladan', icon: '🏆', subtitle: 'Lingkungan yang rapi, aman, dan dipercaya.',
     text: 'Kelurahan menjadikan RT-mu contoh. Kas terjaga, keamanan terkendali, dan hampir tidak ada konflik yang dibiarkan menggantung. Warga tidak selalu setuju denganmu, tapi mereka tahu keputusanmu selalu punya alasan.',
     when: { score: { min: 74 }, trust: { min: 68 }, satisfaction: { min: 65 }, security: { min: 60 }, cash: { min: 1000000 }, conflicts: { max: 1 } } },
@@ -4103,7 +4120,7 @@ RT.engine = (function () {
   /* ============ Save & Simulation State ============ */
   function createState(name, seed) {
     const s = {
-      meta: { version: cfg.version, week: 1, year: cfg.startYear, isGameOver: false, rng: (seed == null ? Date.now() : seed) | 0, uid: 1, playerName: name || 'Bagas', phase: 'playing', pinned: null, decisions: 0, tutorialSeen: false, savedAt: null },
+      meta: { version: cfg.version, week: 1, year: cfg.startYear, isGameOver: false, rng: (seed == null ? Date.now() : seed) | 0, uid: 1, playerName: name || '', phase: 'playing', pinned: null, decisions: 0, tutorialSeen: false, savedAt: null },
       resources: Object.assign({}, cfg.start, { rtTime: cfg.rtTimePerWeek }),
       residents: {}, facilities: {},
       worldState: { rain: 60, weatherIcon: '🌧️', weatherLabel: 'Hujan', flags: {}, conflicts: 0, cooldowns: {}, seen: {}, lastCrisisWeek: -9, chatCooldowns: {}, storiesStarted: [], storiesDone: [] },
@@ -4538,7 +4555,7 @@ RT.ui = (function () {
     if (V.flash) { const el = $screen.querySelector('[data-sec="' + V.flash + '"]'); if (el) { el.classList.add('flash'); if (nav !== false || V.scrollToFlash) el.scrollIntoView({ block: 'nearest' }); } V.flash = null; V.scrollToFlash = false; }
     if (nav) {
       const h = $screen.querySelector('h1');
-      document.title = (h ? h.textContent.trim() + ' · ' : '') + 'RT Simulator';
+      document.title = (h ? h.textContent.trim() + ' · ' : '') + 'Ketua RT';
       if (h && $ov.hidden && focusOnNav) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
     }
     if (pendingFocus) { let el = null; try { el = $screen.querySelector(pendingFocus) || $nav.querySelector(pendingFocus); } catch (e) { el = null; } if (el) el.focus({ preventScroll: true }); pendingFocus = null; }
@@ -5022,7 +5039,7 @@ RT.ui = (function () {
       setGroup([setRow('data-a="set-open" data-k="set-simpan"', 'save', 'var(--color-success-solid)', 'Simpan & muat', info ? 'Manual: minggu ' + info.week : 'Auto-save aktif')], 'Data') +
       setGroup([setRow('data-a="set-open" data-k="help"', 'help', 'var(--midnight)', 'Panduan permainan', ''),
         setRow('data-a="tutorial"', 'replay', 'var(--mocha)', 'Ulangi tutorial', ''),
-        setRow('data-a="set-open" data-k="set-tentang"', 'info', 'var(--graphite)', 'Tentang RT Simulator', '')], 'Bantuan') +
+        setRow('data-a="set-open" data-k="set-tentang"', 'info', 'var(--graphite)', 'Tentang Ketua RT', '')], 'Bantuan') +
       setGroup([setRow('data-a="to-start"', 'exit', 'var(--graphite)', 'Kembali ke layar awal', '', true),
         setRow('data-a="reset"', 'trash', 'var(--color-danger-solid)', 'Hapus auto-save & mulai ulang', '', true)]) + '</div>';
     return { html };
@@ -5044,8 +5061,8 @@ RT.ui = (function () {
     return { html };
   }
   function scrSetTentang() {
-    const html = detailbar('Tentang') + '<div class="body"><section class="card"><div class="sec-title">RT Simulator</div><p class="sm">Narrative management sim: setahun menjadi Ketua RT 04, mengambil keputusan ketika kepentingan warga bertabrakan dengan sumber daya yang terbatas.</p>' +
-      '<dl class="kv" style="margin-top:8px"><dt>Versi</dt><dd>Prototype v0.9 · data simpanan v' + cfg.version + '</dd><dt>Isi</dt><dd>52 minggu · 15 warga · 10 fasilitas</dd></dl></section></div>';
+    const html = detailbar('Tentang') + '<div class="body"><section class="card"><div class="sec-title">Ketua RT</div><p class="sm">Setahun menjadi Ketua RT 04, mengambil keputusan ketika kepentingan warga bertabrakan dengan sumber daya yang terbatas.</p>' +
+      '<dl class="kv" style="margin-top:8px"><dt>Versi</dt><dd>v0.9.1 · data simpanan v' + cfg.version + '</dd><dt>Isi</dt><dd>52 minggu · 15 warga · 10 fasilitas</dd></dl></section></div>';
     return { html };
   }
   const GUIDE = [
@@ -5087,15 +5104,16 @@ RT.ui = (function () {
   }
   function screenStart() {
     const info = RT.save.info(cfg.saveKey); const minfo = RT.save.info(cfg.manualKey);
-    return '<div class="full" style="padding-top:28px"><div class="start-art">' + hoodSvg() + '</div><div><div class="label">RT Simulator · Narrative management sim</div><h1 class="title-xl"><span class="hl">Pimpin</span> RT 04 selama setahun</h1></div>' +
+    return '<div class="full start">' +
+      '<h1 class="start-logo"><picture><source srcset="assets/logo/logo-ketua-rt.svg" type="image/svg+xml"><img src="assets/logo/logo-ketua-rt.png" alt="Ketua RT" onerror="this.closest(\'h1\').classList.add(\'is-text\');this.closest(\'picture\').replaceWith(\'Ketua RT\')"></picture></h1>' +
       '<p class="muted">Menjadi Ketua RT bukan tentang membuat semua orang senang, tetapi mengambil keputusan ketika kepentingan warga saling bertabrakan dengan sumber daya yang terbatas.</p>' +
       (V.loadError ? '<div class="alert-inline" role="alert"><b>Simpanan tidak bisa dibuka</b><span>' + esc(V.loadError) + '</span></div>' : '') +
-      '<section class="card" style="display:flex;flex-direction:column;gap:12px"><label for="pname"><b>Nama Ketua RT</b></label><input id="pname" class="input" maxlength="18" value="Bagas" autocomplete="off" spellcheck="false">' +
+      '<section class="card" style="display:flex;flex-direction:column;gap:12px"><label for="pname"><b>Nama Ketua RT</b></label><input id="pname" class="input" maxlength="18" value="" placeholder="Tulis namamu" autocomplete="off" spellcheck="false" aria-describedby="pname-err"><p id="pname-err" class="field-err" role="alert" hidden>Isi nama dulu sebelum mulai.</p>' +
       '<button class="btn btn--primary btn--block" data-a="new-game">Mulai Jadi Ketua RT</button>' +
       (info ? '<button class="btn btn--outline btn--block" data-a="continue">' + (info.phase === 'ended' ? 'Lihat hasil terakhir' : 'Lanjutkan · Pak ' + esc(info.name) + ', minggu ' + info.week) + '</button>' : '') +
       (minfo ? '<button class="btn btn--ghost btn--block" data-a="load-manual">Muat simpanan manual (minggu ' + minfo.week + ')</button>' : '') + '</section>' +
       '<button type="button" class="btn btn--ghost btn--block" data-a="share" data-t="game">Bagikan Game</button>' +
-      '<p class="foot-note">52 minggu · 15 warga · 10 fasilitas · Prototype</p></div>';
+      '</div>';
   }
   function screenEnding() {
     const s = S(); const e = s.ending; const { def, no, total } = endingInfo(e);
@@ -5109,12 +5127,12 @@ RT.ui = (function () {
         '<button class="btn btn--primary btn--block" data-a="share" data-t="ending">Bagikan Ending</button>' + again + '</div>';
     }
     const host = gameHost();
-    const card = '<section class="card scard" aria-label="Kartu hasil RT Simulator">' +
-      '<div class="scard__top"><span class="label">RT Simulator</span><span class="scard__per">' + cfg.startYear + ' · ' + cfg.totalWeeks + ' minggu</span></div>' +
+    const card = '<section class="card scard" aria-label="Kartu hasil Ketua RT">' +
+      '<div class="scard__top"><span class="label">Ketua RT</span><span class="scard__per">' + cfg.startYear + ' · ' + cfg.totalWeeks + ' minggu</span></div>' +
       '<div class="scard__who"><b>Pak ' + esc(s.meta.playerName) + '</b><span>Ketua RT 04</span></div>' +
       '<div class="scard__end"><span class="scard__icon" aria-hidden="true">' + def.icon + '</span><div><h1 class="scard__title">' + esc(def.title) + '</h1><div class="scard__sub">' + esc(def.subtitle) + '</div></div></div>' +
       '<dl class="scard__stats"><div><dt>Skor akhir</dt><dd>' + e.score + '<small>/100</small></dd></div><div><dt>Urusan beres</dt><dd>' + e.done + '</dd></div><div><dt>Keputusan</dt><dd>' + e.decisions + '</dd></div><div><dt>Kas akhir</dt><dd>' + shortRp(e.final.cash) + '</dd></div></dl>' +
-      '<div class="scard__foot"><span>Mainkan RT Simulator</span>' + (host ? '<span>' + esc(host) + '</span>' : '') + '</div></section>';
+      '<div class="scard__foot"><span>Mainkan Ketua RT</span>' + (host ? '<span>' + esc(host) + '</span>' : '') + '</div></section>';
     return '<div class="full">' + tabs + card + '<p class="muted xs" style="text-align:center">Kartu ini bisa kamu screenshot untuk dibagikan.</p>' +
       '<section class="card"><div class="sec-title">Ringkasan setahun</div><dl class="kv"><dt>Keputusan diambil</dt><dd>' + e.decisions + '</dd><dt>Urusan selesai</dt><dd>' + e.done + '</dd><dt>Urusan gagal</dt><dd>' + e.failed + '</dd><dt>Story chain tuntas</dt><dd>' + e.stories + '</dd><dt>Rapat digelar</dt><dd>' + e.meetings + '/12</dd><dt>Kas akhir</dt><dd>' + rupiah(e.final.cash) + '</dd>' +
       '<dt>Terkuat</dt><dd>' + cfg.statLabels[e.best] + '</dd><dt>Perlu perhatian</dt><dd>' + cfg.statLabels[e.worst] + '</dd><dt>Paling dekat</dt><dd>' + esc(E.nameOf(e.closest)) + '</dd><dt>Paling renggang</dt><dd>' + esc(E.nameOf(e.farthest)) + '</dd></dl></section>' +
@@ -5177,22 +5195,22 @@ RT.ui = (function () {
     const e = state && state.ending;
     if (type === 'game' || !e) {
       const text = 'Nemu game tentang jadi Ketua RT.\n\n' + pitch + call('Coba deh:');
-      return { type: 'game', title: 'RT Simulator', url, text, wa: text, plain: 'Nemu game tentang jadi Ketua RT. ' + pitch };
+      return { type: 'game', title: 'Ketua RT', url, text, wa: text, plain: 'Nemu game tentang jadi Ketua RT. ' + pitch };
     }
     const { def, no, total } = endingInfo(e);
     if (type === 'ending') {
-      return { type, title: 'RT Simulator · ' + def.title, url,
-        text: 'ENDING #' + no + '/' + total + ': ' + def.title + '\n“' + def.subtitle + '”\n\nGue dapet ending ini setelah ' + weeks + ' minggu jadi Ketua RT di RT Simulator. Lu bakal dapet yang mana?' + call('Coba sendiri:'),
+      return { type, title: 'Ketua RT · ' + def.title, url,
+        text: 'ENDING #' + no + '/' + total + ': ' + def.title + '\n“' + def.subtitle + '”\n\nGue dapet ending ini setelah ' + weeks + ' minggu jadi Ketua RT. Lu bakal dapet yang mana?' + call('Coba sendiri:'),
         wa: 'Gue nemu game tentang jadi Ketua RT.\n\n' + pitch + '\n\nGue baru selesai main dan dapat ending:\n*' + def.title + '*' + call('Coba lu:'),
         plain: 'ENDING #' + no + '/' + total + ': ' + def.title + '. Lu bakal dapet yang mana?' };
     }
-    return { type: 'result', title: 'RT Simulator · Hasil', url,
-      text: 'Gue baru selesai jadi Ketua RT selama ' + weeks + ' minggu di RT Simulator.\n\nEnding gue: ' + def.title + '. Skor ' + e.score + '/100, ' + e.done + ' urusan warga beres.\n\nTernyata ngurus warga lebih susah dari yang gue kira.' + call('Coba lu:'),
+    return { type: 'result', title: 'Ketua RT · Hasil', url,
+      text: 'Gue baru selesai jadi Ketua RT selama ' + weeks + ' minggu di game Ketua RT.\n\nEnding gue: ' + def.title + '. Skor ' + e.score + '/100, ' + e.done + ' urusan warga beres.\n\nTernyata ngurus warga lebih susah dari yang gue kira.' + call('Coba lu:'),
       wa: 'Gue nemu game tentang jadi Ketua RT.\n\n' + pitch + '\n\nGue baru selesai main dan dapat:\n*' + def.title + '* (skor ' + e.score + '/100)' + call('Coba lu:'),
       plain: 'Ending gue: ' + def.title + '. Skor ' + e.score + '/100.' };
   }
   const SHARE_COPY = {
-    game: ['Bagikan RT Simulator', 'Coba jadi Ketua RT dan lihat keputusanmu mengubah kehidupan warga.'],
+    game: ['Bagikan Ketua RT', 'Coba jadi Ketua RT dan lihat keputusanmu mengubah kehidupan warga.'],
     ending: ['Bagikan Ending', 'Pesannya sudah terisi. Kamu masih bisa mengubahnya sebelum dikirim.'],
     result: ['Bagikan Hasil', 'Pesannya sudah terisi. Kartu hasil juga bisa kamu screenshot.']
   };
@@ -5885,7 +5903,9 @@ RT.ui = (function () {
     'tx-src': (el) => { const ref = TXREF[+el.dataset.i]; closeOv(); if (ref) openRef(ref); },
     hist: (el) => histModal(+el.dataset.id),
     kondisi: kondisiModal,
-    'new-game': () => { const name = (document.getElementById('pname').value || 'Bagas').trim().replace(/^(Pak|Bu)\s+/i, '') || 'Bagas'; E.newGame(name); resetNav(); endArm = 0; render(true); tutorial(0); },
+    'new-game': () => { const inp = document.getElementById('pname'); const name = (inp.value || '').trim().replace(/^(Pak|Bu)\s+/i, '').trim();
+      if (!name) { const er = document.getElementById('pname-err'); er.hidden = false; inp.setAttribute('aria-invalid', 'true'); inp.focus(); return; }
+      E.newGame(name); resetNav(); endArm = 0; render(true); tutorial(0); },
     continue: () => { if (!E.load()) { V.loadError = 'Simpanan otomatis tidak bisa dibuka. Mulai periode baru, atau muat simpanan manual jika ada.'; startScreen = true; return render(true); } V.loadError = null; applySettings(); resetNav(); render(true); },
     'load-manual': () => { if (!E.loadManual()) { V.loadError = 'Simpanan manual tidak ditemukan. Mulai periode baru atau lanjutkan dari simpanan otomatis.'; startScreen = true; return render(true); } V.loadError = null; applySettings(); resetNav(); render(true); toast('Simpanan manual dimuat.'); },
     'save-manual': () => { E.manualSave(); toast('Tersimpan manual.'); render(false); },
