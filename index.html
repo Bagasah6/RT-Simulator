@@ -714,10 +714,10 @@ button.kas-cell { min-height: 32px; min-width: 44px; border: 1px dashed var(--co
 
 /* ---------- Home (layar awal) v0.9.1: logo + background aset repo ---------- */
 .start { padding-top: 28px; }
-.screen:has(.start) { background-color: var(--color-bg-canvas); background-image: url("assets/home/background-home-ketua-rt.svg"); background-size: cover; background-position: center top; background-repeat: no-repeat; }
-.start-logo { margin: 8px auto 4px; width: min(240px, 70%); line-height: 0; }
+/* Banner layar pembuka: aset background (sudah berisi logo), artboard 360 x 240, tidak dipotong. */
+.start-logo { width: 100%; line-height: 0; border-radius: var(--radius-cards); overflow: hidden; border: 1px solid var(--color-border-subtle); }
 .start-logo img { display: block; width: 100%; height: auto; }
-.start-logo.is-text { width: auto; line-height: var(--leading-heading); font-size: var(--text-heading); font-weight: 700; letter-spacing: -.03em; text-align: center; }
+.start-logo.is-text { width: auto; border: 0; border-radius: 0; line-height: var(--leading-heading); font-size: var(--text-heading); font-weight: 700; letter-spacing: -.03em; text-align: center; }
 .start > p.muted { background: var(--color-bg-surface); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-cards); padding: 12px 16px; }
 .field-err { color: var(--color-danger-text); font-size: var(--text-body-sm); }
 .input[aria-invalid="true"] { border-color: var(--color-danger-text); }
@@ -734,7 +734,7 @@ button.kas-cell { min-height: 32px; min-width: 44px; border: 1px dashed var(--co
     <div class="overlay" id="overlay" hidden></div>
     <div class="toasts" id="toasts" aria-live="polite"></div>
   </div>
-  <p class="caption">Ketua RT · v0.9.1 · data tersimpan di browser ini</p>
+  <p class="caption">Ketua RT · v0.9.2 · data tersimpan di browser ini</p>
 </div>
 <script>
 /* RT Simulator v2 — utilitas, konfigurasi, kalender.
@@ -4147,19 +4147,21 @@ RT.engine = (function () {
     post('alticia', 'alticia', 'Semangat hari pertama jadi Ketua RT ya, Mas. Jangan lupa makan 😊', { stamp: cal.stamp(1, 0) });
     addTx(cfg.start.cash, 'Saldo awal', 'Serah terima kas dari pengurus lama', { type: 'sistem' });
     addHistory({ cat: 'Perkembangan', title: 'Masa jabatan dimulai', summary: 'Pak ' + S.meta.playerName + ' resmi menjabat Ketua RT 04 untuk periode 2027.' });
+    RT.save.fresh(); RT.save.requestPersistent();
     startWeek();
     return S;
   }
   function persist() {
-    if (!S) return;
+    if (!S) return false;
     S.meta.savedAt = Date.now();
-    RT.save.write(cfg.saveKey, S);
+    return RT.save.write(cfg.saveKey, S);
   }
   function load(key) {
     const raw = RT.save.read(key || cfg.saveKey);
     if (!raw) return null;
     if (!raw.meta || !(raw.meta.version >= 2 && raw.meta.version <= cfg.version)) return null; // save demo v1 tidak kompatibel
     S = migrate(raw);
+    RT.save.fresh();
     checkAbandoned();
     return S;
   }
@@ -4355,15 +4357,29 @@ RT.engine = (function () {
   };
 })();
 
-/* Save: localStorage dengan fallback memori (bila storage diblokir di frame). */
+/* Save: localStorage dengan salinan memori.
+   Salinan memori hanya membantu selama halaman terbuka; ia BUKAN penyimpanan permanen.
+   status.ok = false setiap kali tulis ke localStorage gagal, supaya UI tidak mengklaim progres aman.
+   status.stale = true bila tab lain menulis save otomatis yang lebih baru: tab ini berhenti menulis agar tidak menimpanya. */
 RT.save = (function () {
   const mem = {};
+  const status = { ok: true, reason: '', stale: false };
+  let onChange = null;
   function st() { try { const k = '__rt__'; localStorage.setItem(k, '1'); localStorage.removeItem(k); return localStorage; } catch (e) { return null; } }
+  function set(ok, reason) {
+    const changed = status.ok !== ok || status.reason !== reason;
+    status.ok = ok; status.reason = reason;
+    if (changed && onChange) { try { onChange(Object.assign({}, status)); } catch (e) { /* UI tidak boleh menggagalkan save */ } }
+    return ok;
+  }
   function write(key, state) {
-    const payload = JSON.stringify({ v: RT.config.version, savedAt: Date.now(), state });
+    if (status.stale) return set(false, 'stale');
+    let payload;
+    try { payload = JSON.stringify({ v: RT.config.version, savedAt: Date.now(), state }); } catch (e) { return set(false, 'serialize'); }
     mem[key] = payload; const s = st();
-    if (s) { try { s.setItem(key, payload); return true; } catch (e) { return false; } }
-    return false;
+    if (!s) return set(false, 'unavailable');
+    try { s.setItem(key, payload); } catch (e) { return set(false, e && /quota/i.test(e.name + ' ' + e.message) ? 'full' : 'write'); }
+    return set(true, '');
   }
   function read(key) {
     const s = st(); let raw = null;
@@ -4374,7 +4390,18 @@ RT.save = (function () {
   }
   function clear(key) { delete mem[key]; const s = st(); if (s) { try { s.removeItem(key); } catch (e) { /* abaikan */ } } }
   const info = (key) => { const s = read(key); return s && s.meta && s.meta.version >= 2 && s.meta.version <= RT.config.version ? { week: s.meta.week, name: s.meta.playerName, savedAt: s.meta.savedAt, phase: s.meta.phase } : null; };
-  return { write, read, clear, info };
+  /* Dipanggil setelah state di tab ini baru dimuat / dibuat: tab ini kembali boleh menulis. */
+  function fresh() { status.stale = false; }
+  function available() { return !!st(); }
+  /* Minta browser tidak menghapus data saat ruang penyimpanan menipis (jika didukung). */
+  function requestPersistent() { try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) { /* abaikan */ } }
+  try {
+    window.addEventListener('storage', (e) => {
+      if (e.key !== RT.config.saveKey || !e.newValue || e.newValue === mem[e.key]) return;
+      status.stale = true; set(false, 'stale');
+    });
+  } catch (e) { /* lingkungan tanpa window */ }
+  return { write, read, clear, info, fresh, available, requestPersistent, status, onChange: (fn) => { onChange = fn; } };
 })();
 
 /* RT Simulator v2 — UI smartphone. UI hanya membaca state & memanggil RT.engine. */
@@ -5036,7 +5063,7 @@ RT.ui = (function () {
     const html = appbar('Pengaturan') + '<div class="body"><section class="card menu-prof">' + av('me', 'lg') + '<div><b style="font-size:1.1em">Pak ' + esc(s.meta.playerName) + '</b><div class="muted sm">Ketua RT 04 / RW 08</div><div class="muted sm">Periode ' + cfg.startYear + ' · Minggu ' + s.meta.week + '/52</div></div></section>' +
       setGroup([setRow('data-a="set-open" data-k="set-tampilan"', 'text', 'var(--signal-blue)', 'Tampilan', s.settings.size === 'large' ? 'Teks besar' : 'Teks normal'),
         setRow('data-a="set-open" data-k="set-suara"', 'sound', 'var(--coral)', 'Suara', 'Segera hadir')], 'Umum') +
-      setGroup([setRow('data-a="set-open" data-k="set-simpan"', 'save', 'var(--color-success-solid)', 'Simpan & muat', info ? 'Manual: minggu ' + info.week : 'Auto-save aktif')], 'Data') +
+      setGroup([setRow('data-a="set-open" data-k="set-simpan"', 'save', 'var(--color-success-solid)', 'Simpan & muat', !RT.save.status.ok ? '⚠️ Belum tersimpan' : info ? 'Manual: minggu ' + info.week : 'Auto-save aktif')], 'Data') +
       setGroup([setRow('data-a="set-open" data-k="help"', 'help', 'var(--midnight)', 'Panduan permainan', ''),
         setRow('data-a="tutorial"', 'replay', 'var(--mocha)', 'Ulangi tutorial', ''),
         setRow('data-a="set-open" data-k="set-tentang"', 'info', 'var(--graphite)', 'Tentang Ketua RT', '')], 'Bantuan') +
@@ -5055,14 +5082,14 @@ RT.ui = (function () {
   }
   function scrSetSimpan() {
     const s = S(); const info = RT.save.info(cfg.manualKey);
-    const html = detailbar('Simpan & muat') + '<div class="body"><section class="card"><div class="sec-title">Auto-save</div><p class="muted sm">Aktif setiap tindakan. Terakhir: ' + (s.meta.savedAt ? new Date(s.meta.savedAt).toLocaleTimeString('id-ID') : '-') + '</p></section>' +
-      '<section class="card"><div class="sec-title">Simpanan manual</div><p class="muted sm">' + (info ? 'Minggu ' + info.week + ' (' + new Date(info.savedAt).toLocaleString('id-ID') + ')' : 'Belum ada') + '</p>' +
+    const html = detailbar('Simpan & muat') + '<div class="body"><section class="card"><div class="sec-title">Auto-save</div>' + (RT.save.status.ok ? '<p class="muted sm">Aktif setiap tindakan. Terakhir: ' + (s.meta.savedAt ? new Date(s.meta.savedAt).toLocaleTimeString('id-ID') : '-') + '</p>' : '<div class="alert-inline" role="alert"><b>⚠️ Progres belum tersimpan</b><span>' + esc(saveMsg(RT.save.status.reason)) + '</span></div>') + '</section>' +
+      '<section class="card"><div class="sec-title">Simpanan manual</div><p class="muted sm">' + (info ? 'Minggu ' + info.week + ' (' + new Date(info.savedAt).toLocaleString('id-ID') + ')' + (RT.save.available() ? '' : ' · hanya sampai halaman ditutup') : 'Belum ada') + '</p>' +
       '<div class="sheet__actions" style="margin-top:12px"><button class="btn btn--primary" data-a="save-manual">' + ic('save', 'ico--sm') + ' Simpan manual</button><button class="btn btn--outline" data-a="load-manual"' + (info ? '' : ' disabled') + '>Muat simpanan manual</button></div></section></div>';
     return { html };
   }
   function scrSetTentang() {
     const html = detailbar('Tentang') + '<div class="body"><section class="card"><div class="sec-title">Ketua RT</div><p class="sm">Setahun menjadi Ketua RT 04, mengambil keputusan ketika kepentingan warga bertabrakan dengan sumber daya yang terbatas.</p>' +
-      '<dl class="kv" style="margin-top:8px"><dt>Versi</dt><dd>v0.9.1 · data simpanan v' + cfg.version + '</dd><dt>Isi</dt><dd>52 minggu · 15 warga · 10 fasilitas</dd></dl></section></div>';
+      '<dl class="kv" style="margin-top:8px"><dt>Versi</dt><dd>v0.9.2 · data simpanan v' + cfg.version + '</dd><dt>Isi</dt><dd>52 minggu · 15 warga · 10 fasilitas</dd></dl></section></div>';
     return { html };
   }
   const GUIDE = [
@@ -5102,12 +5129,34 @@ RT.ui = (function () {
       house(20, 60, 46, '#f6d5b8', '#f64932') + house(102, 52, 60, '#ffffff', '#02093a') + '<circle cx="186" cy="88" r="20" fill="#2f8f57"/><rect x="183" y="96" width="6" height="24" fill="#b18164"/>' + house(214, 62, 50, '#fde7e3', '#f64932') + house(296, 50, 40, '#f6d5b8', '#02093a') +
       '<rect x="168" y="70" width="4" height="50" fill="#615d59"/><circle cx="170" cy="68" r="6" fill="#ffb110"/></svg>';
   }
+  /* ============ Status penyimpanan ============ */
+  const SAVE_MSG = {
+    unavailable: 'Penyimpanan game tidak tersedia di browser ini, jadi progres akan hilang saat halaman ditutup. Buka game di Chrome atau Safari biasa (bukan mode penyamaran).',
+    full: 'Ruang penyimpanan browser penuh, jadi progres terbaru belum tersimpan.',
+    stale: 'Game ini juga dibuka di tab lain. Progres di tab ini tidak disimpan supaya tidak menimpa tab lain.',
+    write: 'Browser menolak menyimpan progres. Coba lagi sebentar.',
+    serialize: 'Progres tidak bisa disiapkan untuk disimpan. Coba lagi sebentar.'
+  };
+  const saveMsg = (r) => SAVE_MSG[r] || SAVE_MSG.write;
+  const SAVE_SHORT = { unavailable: 'Penyimpanan browser tidak tersedia.', full: 'Penyimpanan browser penuh.' };
+  const saveShort = (r) => SAVE_SHORT[r] || 'Coba lagi sebentar.';
+  let saveQuiet = false;
+  function onSaveStatus(st) {
+    if (st.ok) { if (!saveQuiet) toast('✓ Progres tersimpan lagi'); return; }
+    if (st.reason === 'stale') {
+      sheet('Dibuka di tab lain', '<p class="sm">' + esc(saveMsg('stale')) + '</p><p class="muted sm">Muat progres terbaru untuk lanjut bermain di tab ini.</p>',
+        [{ label: 'Muat progres terbaru', cls: 'btn--primary', run: () => { closeOv(); A.continue(); } }, { label: 'Tutup', run: closeOv }]);
+      return;
+    }
+    if (!saveQuiet) toast('⚠️ Progres belum tersimpan. ' + saveShort(st.reason), { error: true });
+  }
   function screenStart() {
     const info = RT.save.info(cfg.saveKey); const minfo = RT.save.info(cfg.manualKey);
     return '<div class="full start">' +
-      '<h1 class="start-logo"><picture><source srcset="assets/logo/logo-ketua-rt.svg" type="image/svg+xml"><img src="assets/logo/logo-ketua-rt.png" alt="Ketua RT" onerror="this.closest(\'h1\').classList.add(\'is-text\');this.closest(\'picture\').replaceWith(\'Ketua RT\')"></picture></h1>' +
+      '<h1 class="start-logo"><picture><source srcset="assets/home/background-home-ketua-rt.svg" type="image/svg+xml"><img src="assets/home/background-home-ketua-rt.png" alt="Ketua RT" width="360" height="240" onerror="this.closest(\'h1\').classList.add(\'is-text\');this.closest(\'picture\').replaceWith(\'Ketua RT\')"></picture></h1>' +
       '<p class="muted">Menjadi Ketua RT bukan tentang membuat semua orang senang, tetapi mengambil keputusan ketika kepentingan warga saling bertabrakan dengan sumber daya yang terbatas.</p>' +
       (V.loadError ? '<div class="alert-inline" role="alert"><b>Simpanan tidak bisa dibuka</b><span>' + esc(V.loadError) + '</span></div>' : '') +
+      (RT.save.available() ? '' : '<div class="alert-inline" role="alert"><b>⚠️ Progres tidak akan tersimpan</b><span>' + esc(saveMsg('unavailable')) + '</span></div>') +
       '<section class="card" style="display:flex;flex-direction:column;gap:12px"><label for="pname"><b>Nama Ketua RT</b></label><input id="pname" class="input" maxlength="18" value="" placeholder="Tulis namamu" autocomplete="off" spellcheck="false" aria-describedby="pname-err"><p id="pname-err" class="field-err" role="alert" hidden>Isi nama dulu sebelum mulai.</p>' +
       '<button class="btn btn--primary btn--block" data-a="new-game">Mulai Jadi Ketua RT</button>' +
       (info ? '<button class="btn btn--outline btn--block" data-a="continue">' + (info.phase === 'ended' ? 'Lihat hasil terakhir' : 'Lanjutkan · Pak ' + esc(info.name) + ', minggu ' + info.week) + '</button>' : '') +
@@ -5897,7 +5946,7 @@ RT.ui = (function () {
     fac: (el) => { const snap = infoSnapshot(); const r = E.facilityAction(el.dataset.id, el.dataset.k); toastNewInfo(snap); if (!r.ok) return toastErr(r.reason); V.fb = { fac: el.dataset.id, text: r.text, notes: r.notes }; V.flash = 'header'; render(false); },
     family: () => { const r = E.familyTime(); if (r.ok) toast(r.text); else toastErr(r.reason); render(false); },
     'end-week': endWeekFlow,
-    'next-week': () => { E.continueAfterReport(); enterApp('home'); render(true); },
+    'next-week': () => { E.continueAfterReport(); enterApp('home'); render(true); if (RT.save.status.ok) toast('✓ Progres tersimpan'); },
     tx: (el) => txModal(+el.dataset.id),
     'tx-type': (el) => { el.parentNode.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b === el))); },
     'tx-src': (el) => { const ref = TXREF[+el.dataset.i]; closeOv(); if (ref) openRef(ref); },
@@ -5905,10 +5954,19 @@ RT.ui = (function () {
     kondisi: kondisiModal,
     'new-game': () => { const inp = document.getElementById('pname'); const name = (inp.value || '').trim().replace(/^(Pak|Bu)\s+/i, '').trim();
       if (!name) { const er = document.getElementById('pname-err'); er.hidden = false; inp.setAttribute('aria-invalid', 'true'); inp.focus(); return; }
-      E.newGame(name); resetNav(); endArm = 0; render(true); tutorial(0); },
+      const cur = RT.save.info(cfg.saveKey);
+      const begin = () => { E.newGame(name); resetNav(); endArm = 0; render(true); tutorial(0); };
+      if (cur && cur.phase !== 'ended') {
+        startScreen = true; // tetap di layar awal sampai pemain memilih
+        return sheet('Mulai periode baru?', '<p class="sm">Ada progres <b>Pak ' + esc(cur.name) + '</b> sampai minggu ' + cur.week + '. Kalau mulai baru, progres itu diganti dan tidak bisa dikembalikan.</p>',
+          [{ label: 'Lanjutkan Pak ' + cur.name, cls: 'btn--primary', run: () => { closeOv(); A.continue(); } },
+           { label: 'Mulai baru', cls: 'btn--outline', run: () => { closeOv(); startScreen = false; begin(); } }]);
+      }
+      begin(); },
     continue: () => { if (!E.load()) { V.loadError = 'Simpanan otomatis tidak bisa dibuka. Mulai periode baru, atau muat simpanan manual jika ada.'; startScreen = true; return render(true); } V.loadError = null; applySettings(); resetNav(); render(true); },
     'load-manual': () => { if (!E.loadManual()) { V.loadError = 'Simpanan manual tidak ditemukan. Mulai periode baru atau lanjutkan dari simpanan otomatis.'; startScreen = true; return render(true); } V.loadError = null; applySettings(); resetNav(); render(true); toast('Simpanan manual dimuat.'); },
-    'save-manual': () => { E.manualSave(); toast('Tersimpan manual.'); render(false); },
+    'save-manual': () => { saveQuiet = true; const ok = E.manualSave(); saveQuiet = false;
+      toast(ok ? '✓ Progres tersimpan' : '⚠️ Progres belum tersimpan. ' + saveShort(RT.save.status.reason), { error: !ok }); render(false); },
     share: (el) => shareSheet(el.dataset.t || 'game'),
     'share-copy': shareCopy,
     'share-native': shareNative,
@@ -5935,6 +5993,7 @@ RT.ui = (function () {
     document.addEventListener('click', (e) => { focusOnNav = true; const el = e.target.closest('[data-a]'); if (!el || el.disabled) return; if (el.closest('#overlay')) lastOv = { t: Date.now(), x: e.clientX, y: e.clientY };
       else if (Date.now() - lastOv.t < 350 && Math.abs(e.clientX - lastOv.x) < 12 && Math.abs(e.clientY - lastOv.y) < 12) return; const f = A[el.dataset.a]; if (f) f(el); });
     document.addEventListener('submit', (e) => e.preventDefault());
+    RT.save.onChange(onSaveStatus);
     /* Recent apps: geser kartu ke atas untuk menutup */
     const unswipe = () => { if (!swipe) return; swipe.c.style.transform = ''; swipe.c.style.opacity = ''; swipe = null; };
     document.addEventListener('pointerdown', (e) => { const c = e.target.closest('.rcard'); if (!c || e.target.closest('.rcard__x')) return; swipe = { c, x: e.clientX, y: e.clientY, dy: 0 }; });
