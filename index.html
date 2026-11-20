@@ -742,6 +742,41 @@ button.kas-cell { min-height: 32px; min-width: 44px; border: 1px dashed var(--co
 .fb-chats { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 8px; }
 .ev__half { width: 1em; height: 1em; flex: none; vertical-align: -0.125em; }
 
+/* ---------- Layar akhir v0.9.5: badge besar sebagai pusat, detail kecil di bawah ---------- */
+.screen > div:has(> .endx) { min-height: 100%; display: flex; flex-direction: column; }
+.endx { flex: 1; align-items: center; text-align: center; gap: 8px; padding-top: 32px; }
+.endx__kicker { font-size: var(--text-caption); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--color-text-secondary); }
+.endx__badge { width: min(280px, 74vw); aspect-ratio: 1; display: grid; place-items: center; margin: 12px 0 16px; }
+.endx__pic, .endx__pic img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.end__emoji { font-size: 140px; line-height: 1; }
+.endx__title { font-size: 30px; line-height: 1.15; font-weight: 700; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.endx--fail .endx__title { color: var(--color-danger-text); }
+.endx__copy { font-size: var(--text-body); line-height: var(--leading-body); color: var(--color-text-secondary); max-width: 30ch; }
+.endx__foot { margin-top: auto; padding-top: 24px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.endx__hl { font-size: var(--text-body-sm); color: var(--color-text); }
+.endx__num { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--color-accent-text); }
+.endx--fail .endx__num { color: var(--color-danger-text); }
+.endx__lbl { color: var(--color-text-secondary); }
+.endx__close { font-size: var(--text-caption); color: var(--color-text-secondary); max-width: 34ch; }
+.endx__cta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-top: 12px; }
+.endx__cta .btn { min-height: 48px; }
+.endx__who { font-size: var(--text-caption); color: var(--color-text-secondary); overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: no-preference) {
+  .endx__a1, .endx__a3, .endx__a4, .endx__a5, .endx__a6 { animation: endx-in 380ms ease-out both; }
+  .endx__a2 { animation: endx-badge 520ms cubic-bezier(.2, .8, .3, 1) both; }
+  .endx__a1 { animation-delay: 0ms; } .endx__a2 { animation-delay: 180ms; } .endx__a3 { animation-delay: 520ms; }
+  .endx__a4 { animation-delay: 760ms; } .endx__a5 { animation-delay: 1000ms; } .endx__a6 { animation-delay: 1300ms; }
+}
+@keyframes endx-in { from { opacity: 0; translate: 0 8px; } }
+@keyframes endx-badge { from { opacity: 0; scale: .88; } }
+
+/* Lembar berbagi v0.9.5 */
+.share-copy { font-size: var(--text-body); line-height: var(--leading-body); font-weight: 600; }
+.shot { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.shot__frame { aspect-ratio: 1200 / 630; border-radius: var(--radius-buttons); border: 1px solid var(--color-border-subtle); background: var(--color-bg-canvas); display: grid; place-items: center; overflow: hidden; }
+.shot__frame img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.shot__wait { font-size: var(--text-caption); color: var(--color-text-secondary); padding: 0 12px; text-align: center; }
+
 </style>
 </head>
 <body>
@@ -753,7 +788,7 @@ button.kas-cell { min-height: 32px; min-width: 44px; border: 1px dashed var(--co
     <div class="overlay" id="overlay" hidden></div>
     <div class="toasts" id="toasts" aria-live="polite"></div>
   </div>
-  <p class="caption">Ketua RT · v0.9.4 · data tersimpan di browser ini</p>
+  <footer class="caption">Ketua RT · v0.9.5 · data tersimpan di browser ini</footer>
 </div>
 <script>
 /* RT Simulator v2 — utilitas, konfigurasi, kalender.
@@ -2073,26 +2108,26 @@ RT.data.speechPoints = [
   ['Parkir', 'tidak boleh di depan pagar orang'], ['Sampah', 'diangkut Selasa dan Jumat']
 ];
 
-/* Ending — struktur final versi 52 minggu masih OPEN QUESTION. Ini versi sementara. */
+/* Hasil akhir v0.9.5: ENDING = BADGE (7 hasil, tepat 1 per playthrough).
+   Aturan pemilihan ada di engine (pickResult). asset = nama file di assets/ending/<asset>.svg|.png (jangan diubah). */
 RT.data.endings = [
-  { id: 'chaos', title: 'RT Chaos', icon: '🌪️', subtitle: 'Warga tidak lagi percaya pada keputusan RT.',
-    text: 'Setahun terasa seperti sepuluh tahun. Grup warga penuh debat, rapat sering ricuh, dan nama-nama calon Ketua RT baru sudah beredar. Tapi kamu bertahan sampai akhir, dan belajar bahwa memimpin lingkungan jauh lebih sulit dari kelihatannya.',
-    when: { any: [{ trust: { max: 38 } }, { satisfaction: { max: 38 } }, { score: { max: 45 } },
-      /* Konflik tinggi saja tidak cukup: harus disertai tanda warga mulai hilang percaya (ambang yang sama dengan event 'calon_ketua'). */
-      { conflicts: { min: 5 }, any: [{ trust: { max: 55 } }, { satisfaction: { max: 52 } }] }] } },
-  { id: 'teladan', title: 'RT Teladan', icon: '🏆', subtitle: 'Lingkungan yang rapi, aman, dan dipercaya.',
-    text: 'Kelurahan menjadikan RT-mu contoh. Kas terjaga, keamanan terkendali, dan hampir tidak ada konflik yang dibiarkan menggantung. Warga tidak selalu setuju denganmu, tapi mereka tahu keputusanmu selalu punya alasan.',
-    when: { score: { min: 74 }, trust: { min: 68 }, satisfaction: { min: 65 }, security: { min: 60 }, cash: { min: 1000000 }, conflicts: { max: 1 } } },
-  { id: 'sejahtera', title: 'RT Sejahtera', icon: '🌻', subtitle: 'Kas sehat, warga nyaman.',
-    text: 'Kas tebal, fasilitas terawat, warga hidup nyaman. Tidak semua orang akrab, tapi tidak ada yang merasa dirugikan. Pak Dedi akhirnya berani tersenyum saat membuka buku kas.',
-    when: { cash: { min: 3000000 }, satisfaction: { min: 62 }, comfort: { min: 55 }, score: { min: 62 } } },
-  { id: 'kompak', title: 'RT Paling Kompak', icon: '🤝', subtitle: 'Warganya saling kenal, saling bantu.',
-    text: 'Dana mungkin pas-pasan, tapi gotong royong jalan terus. Kamu tidak membuat semua orang senang, tapi kamu membuat mereka merasa jadi bagian dari satu lingkungan.',
-    when: { trust: { min: 68 }, reputation: { min: 62 }, conflicts: { max: 2 }, score: { min: 56 } } },
-  { id: 'stabil', title: 'Ketua RT Stabil', icon: '🧭', subtitle: 'Tidak sempurna, tapi bertahan dengan baik.',
-    text: 'Ada urusan yang beres, ada yang masih menggantung. Warga tidak bersorak, tapi juga tidak demo. Kamu menjaga RT tetap berjalan dengan sumber daya yang terbatas, dan itu prestasi yang jarang terlihat.',
-    when: {} }
+  { id: 'rt_teladan', title: 'RT Teladan', asset: 'rt-teladan', icon: '🏆', identity: 'Overall excellence',
+    copy: 'Satu tahun penuh urusan warga, dan lu berhasil menjaganya tetap berjalan.' },
+  { id: 'perekat_warga', title: 'Perekat Warga', asset: 'perekat-warga', icon: '🤝', identity: 'Social cohesion',
+    copy: 'Beda pendapat boleh. Yang penting, warga masih mau duduk bareng.' },
+  { id: 'sang_penengah', title: 'Sang Penengah', asset: 'sang-penengah', icon: '⚖️', identity: 'Conflict resolution',
+    copy: 'Saat dua pihak sama-sama merasa benar, lu tetap cari jalan tengah.' },
+  { id: 'pengelola_kas', title: 'Pengelola Kas', asset: 'pengelola-kas', icon: '💰', identity: 'Financial management',
+    copy: 'Lu tahu kapan harus berhemat dan kapan kas harus digunakan.' },
+  { id: 'rt_terawat', title: 'RT Terawat', asset: 'rt-terawat', icon: '🌳', identity: 'Facility/environment management',
+    copy: 'Fasilitas lingkungan tetap terjaga dan siap digunakan warga.' },
+  { id: 'mindmaster', title: 'Mindmaster', asset: 'mastermind', icon: '🧠', identity: 'Long-term decision management',
+    copy: 'Lu selalu beberapa langkah di depan.' },
+  { id: 'morat_marit', title: 'RT Morat-Marit', asset: 'morat-marit', icon: '🌪️', identity: 'Overall critical failure', failure: true,
+    copy: 'Terlalu banyak urusan yang akhirnya nggak sempat lu beresin.' }
 ];
+RT.data.endingClosing = 'Satu tahun selesai. Ketua RT berikutnya bisa mulai dari sini.';
+
 
 /* Pesan pembuka per event (Event Engine data). Format: [thread, pengirim, teks].
    thread = id warga (chat pribadi), 'grup' (Grup Warga RT 04) atau 'pengurus' (Pengurus RT 04).
@@ -4180,14 +4215,124 @@ RT.engine = (function () {
     const conflictScore = 100 - Math.min(100, conflicts * 20);
     return Math.round(0.14 * st.trust + 0.14 * st.satisfaction + 0.14 * st.security + 0.10 * st.cleanliness + 0.10 * st.comfort + 0.12 * st.reputation + 0.16 * moneyScore + 0.10 * conflictScore);
   }
+  /* ============ Hasil akhir (ending = badge) — pengukur dari data yang sudah ada ============
+     Tidak ada engine achievement baru: semua angka dibaca dari state save (stat, urusan, keputusan, transaksi,
+     fasilitas, social memory, konsekuensi tertunda). */
+  function endingMetrics() {
+    const r = S.resources; const score = computeScore(r, S.worldState.conflicts);
+    const decided = S.playerDecisions.map((d) => {
+      const u = findU(d.uid); if (!u || u.kind !== 'event') return null;
+      const ev = evDef(u.refId); const ch = ev && (ev.choices || []).find((c) => c.label === d.choice);
+      return ch ? { u, ev, ch, note: (u.decisions.find((x) => x.text === d.choice) || {}).consequence || '' } : null;
+    }).filter(Boolean);
+    const tagShare = (t) => decided.length ? decided.filter((d) => ((d.ch.tags || {})[t] || 0) > 0).length / decided.length : 0;
+    const socialFx = (fx) => (fx.trust || 0) + (fx.satisfaction || 0) + (fx.reputation || 0) - 6 * (fx.conflicts || 0);
+    // Konflik: urusan konflik/sosial yang tuntas dengan baik vs gagal / diselesaikan dengan memperburuk keadaan
+    const confU = S.urusan.filter((u) => u.kind === 'event' && ['conflict', 'social', 'political'].includes((evDef(u.refId) || {}).category));
+    const confGood = decided.filter((d) => confU.includes(d.u) && socialFx(d.ch.fx || {}) >= 0).length;
+    const confBad = confU.filter((u) => u.status === 'Gagal').length + decided.filter((d) => confU.includes(d.u) && socialFx(d.ch.fx || {}) < 0).length;
+    // Kas: saldo sepanjang tahun dari riwayat transaksi
+    const txs = S.transactions.slice().reverse(); let bal = 0; let minBal = Infinity; let income = 0; let spent = 0; let spentWarga = 0;
+    txs.forEach((t) => { bal += t.amount; minBal = Math.min(minBal, bal); if (t.cat === 'Saldo awal') return; if (t.amount > 0) income += t.amount; else { spent -= t.amount; if (t.source && t.source.type !== 'minigame') spentWarga -= t.amount; } });
+    if (minBal === Infinity) minBal = bal;
+    const finU = S.urusan.filter((u) => u.kind === 'event' && (evDef(u.refId) || {}).category === 'finance');
+    // Fasilitas
+    const owned = Object.keys(S.facilities).filter((id) => S.facilities[id].owned);
+    const facAvg = owned.length ? owned.reduce((a, id) => a + S.facilities[id].condition, 0) / owned.length : 0;
+    const facOk = owned.length ? owned.filter((id) => S.facilities[id].condition >= 50).length / owned.length : 0;
+    const facCare = S.transactions.filter((t) => t.source && t.source.type === 'fasilitas' && t.amount < 0).length;
+    // Jangka panjang: keputusan yang punya konsekuensi tertunda, mana yang berbuah baik / jadi bumerang
+    const qSign = (q) => (q.eventId ? -1 : Math.sign(Object.entries(q.fx || {}).reduce((a, [k, v]) => a + (k === 'money' || k === 'cash' ? v / 100000 : k === 'conflicts' ? -6 * v : v), 0)));
+    /* Antisipasi = memilih opsi tanpa risiko jangka panjang padahal opsi lain membawanya.
+       Investasi = opsi berdampak baik jangka panjang yang benar-benar terjadi.
+       Bumerang = dampak buruk jangka panjang yang benar-benar terjadi. Risiko yang kebetulan tidak terjadi = netral (untung, bukan antisipasi). */
+    let longGood = 0; let longBad = 0; let longTotal = 0; let riskChances = 0; let riskAvoided = 0;
+    decided.forEach((d) => {
+      const risky = (c) => (c.queue || []).some((q) => qSign(q) < 0);
+      if (d.ev.choices.some(risky)) { riskChances++; if (!risky(d.ch)) { riskAvoided++; longGood++; longTotal++; } }
+      (d.ch.queue || []).forEach((q) => {
+        longTotal++;
+        const fired = q.eventId ? S.urusan.some((u) => u.delayed && u.refId === q.eventId) : !!(q.note && d.note.includes(q.note));
+        if (fired && qSign(q) > 0) longGood++; else if (fired && qSign(q) < 0) longBad++;
+      });
+    });
+    const delayedU = S.urusan.filter((u) => u.delayed);
+    const delayedOk = delayedU.filter((u) => u.status === 'Selesai').length; const delayedFail = delayedU.filter((u) => u.status === 'Gagal').length;
+    const storyU = S.urusan.filter((u) => u.kind === 'story'); const infos = storyU.flatMap((u) => u.info);
+    const facts = infos.length ? infos.filter((i) => i.label === 'Diketahui' || i.label === 'Tidak Terbukti').length / infos.length : 0;
+    const storyOk = storyU.filter((u) => u.status === 'Selesai').length; const storyFail = storyU.filter((u) => u.status === 'Gagal').length;
+    // Hubungan sosial
+    const pairs = Object.values(S.social.pairs); const pairPos = pairs.filter((p) => p.s >= 2).length; const pairNeg = pairs.filter((p) => p.s <= -2).length;
+    const resTrust = Object.values(S.residents).reduce((a, x) => a + x.trust, 0) / Object.keys(S.residents).length;
+    const failed = S.urusan.filter((u) => u.status === 'Gagal').length; const done = S.urusan.filter((u) => u.status === 'Selesai').length;
+    return { score, trust: r.trust, satisfaction: r.satisfaction, security: r.security, cleanliness: r.cleanliness, comfort: r.comfort, reputation: r.reputation,
+      cash: r.cash, conflicts: S.worldState.conflicts, done, failed, decisions: decided.length,
+      consult: tagShare('consult'), community: tagShare('community'), delayTag: tagShare('delay'),
+      confGood, confBad, minBal, income, spent, spentWarga, finDone: finU.filter((u) => u.status === 'Selesai').length, finFail: finU.filter((u) => u.status === 'Gagal').length,
+      facAvg, facOk, facCare, longTotal, longGood, longBad, riskChances, riskAvoided, foresight: riskChances ? riskAvoided / riskChances : 0, delayedOk, delayedFail, facts, storyOk, storyFail, pairPos, pairNeg, resTrust };
+  }
+  /* Pemilihan hasil akhir (ending = badge). Deterministik, tanpa acak.
+     1) RT Morat-Marit bila RT gagal dikendalikan (aturan Chaos lama: konflik saja tidak cukup).
+     2) RT Teladan bila semua lini kuat (overall excellence) — menang atas identitas lain.
+     3) Lima identitas lain dinilai "kecocokan" 0–100 dari beberapa komponen; yang lolos syarat minimum
+        dan kecocokannya tertinggi dipakai. Seri → urutan RESULT_TIE. Tidak ada yang lolos → kecocokan tertinggi. */
+  const lin = (v, a, b) => clamp(((v - a) / (b - a)) * 100, 0, 100);
+  const avgOf = (xs) => xs.reduce((a, x) => a + x, 0) / xs.length;
+  const RESULT_TIE = ['mindmaster', 'sang_penengah', 'pengelola_kas', 'rt_terawat', 'perekat_warga'];
+  function resultFits(m) {
+    const pairRatio = m.pairPos + m.pairNeg ? m.pairPos / (m.pairPos + m.pairNeg) : 0.5;
+    const confQ = m.confGood + m.confBad ? m.confGood / (m.confGood + m.confBad) : 0;
+    const longQ = m.longGood + m.longBad ? m.longGood / (m.longGood + m.longBad) : 0;
+    return {
+      perekat_warga: { fit: avgOf([lin(m.trust, 60, 95), lin(m.reputation, 45, 70), lin(pairRatio, 0.25, 0.6), lin(m.community, 0.15, 0.5), lin(m.resTrust, 70, 95), lin(-m.conflicts, -3, 0)]),
+        ok: m.trust >= 70 && m.reputation >= 50 && m.conflicts <= 2, veto: m.trust < 60 },
+      sang_penengah: { fit: avgOf([lin(confQ, 0.7, 1), lin(m.confGood, 15, 35), lin(m.consult, 0.05, 0.35), lin(-m.conflicts, -3, 0)]),
+        ok: m.confGood >= 8 && confQ >= 0.8 && m.conflicts <= 2, veto: confQ < 0.6 },
+      /* Kas besar saja tidak cukup: harus tetap dipakai untuk warga, tidak pernah nyaris kosong, warga puas,
+         konflik terkendali, dan bukan hasil kebiasaan menunda keputusan. */
+      pengelola_kas: { fit: avgOf([lin(m.cash, 1000000, 5000000), lin(m.minBal, 0, 3000000), lin(m.satisfaction, 60, 90), lin(m.spentWarga, 8000000, 20000000), lin(m.finDone - 2 * m.finFail, 0, 6), lin(-m.conflicts, -4, 0), lin(-m.delayTag, -0.5, -0.15)]),
+        ok: m.cash >= 2500000 && m.minBal >= 500000 && m.satisfaction >= 60 && m.spentWarga >= 6000000 && m.conflicts <= 3 && m.delayTag <= 0.4, veto: m.cash < 1000000 || m.minBal < 0 || m.delayTag > 0.4 || m.conflicts >= 5 },
+      rt_terawat: { fit: avgOf([lin(m.facAvg, 40, 85), lin(m.facOk, 0.4, 1), lin(m.facCare, 50, 90)]),
+        ok: m.facAvg >= 65 && m.facOk >= 0.8, veto: m.facAvg < 60 || m.facOk < 0.6 },
+      /* Berpikir beberapa langkah ke depan: dari keputusan yang punya opsi berisiko jangka panjang, berapa persen yang
+         dihindari; dampak buruk yang benar-benar terjadi; urusan susulan yang gagal; fakta story yang terungkap; kebiasaan menunda. */
+      mindmaster: { fit: avgOf([lin(m.foresight, 0.6, 1), lin(-m.longBad, -3, 0), lin(m.facts, 0.6, 0.9), lin(-m.delayTag, -0.3, 0), lin(m.riskChances, 3, 10), lin(-m.delayedFail, -1, 0)]),
+        ok: m.riskChances >= 5 && m.foresight >= 0.85 && m.longBad <= 1 && m.delayedFail === 0 && m.facts >= 0.75 && m.delayTag <= 0.25, veto: m.foresight < 0.6 || m.longBad >= 3 || m.delayTag > 0.3 || m.conflicts >= 5 }
+    };
+  }
+  function pickResult(m) {
+    if (m.trust <= 38 || m.satisfaction <= 38 || m.score <= 45 || (m.conflicts >= 5 && (m.trust <= 55 || m.satisfaction <= 52))) return 'morat_marit';
+    if (m.score >= 74 && m.trust >= 68 && m.satisfaction >= 65 && m.security >= 60 && m.cash >= 1000000 && m.conflicts <= 1 &&
+      ['trust', 'satisfaction', 'security', 'cleanliness', 'comfort', 'reputation'].every((k) => m[k] >= 50) && m.failed <= 2) return 'rt_teladan';
+    const fits = resultFits(m);
+    const order = (ids) => ids.slice().sort((a, b) => (fits[b].fit - fits[a].fit) || (RESULT_TIE.indexOf(a) - RESULT_TIE.indexOf(b)));
+    const passed = RESULT_TIE.filter((id) => fits[id].ok);
+    if (passed.length) return order(passed)[0];
+    /* Tidak ada yang lolos syarat: pakai kecocokan tertinggi, tapi jangan pilih identitas yang jelas bertentangan (veto) */
+    const allowed = RESULT_TIE.filter((id) => !fits[id].veto);
+    return order(allowed.length ? allowed : RESULT_TIE)[0];
+  }
+  /* Satu angka paling menonjol untuk tiap hasil */
+  function resultHighlight(id, m) {
+    switch (id) {
+      case 'rt_teladan': return { value: String(m.score), label: 'Skor Akhir' };
+      case 'perekat_warga': return { value: String(Math.round(m.trust)), label: 'Kepercayaan Warga' };
+      case 'sang_penengah': return { value: String(m.confGood), label: 'Konflik Terselesaikan' };
+      case 'pengelola_kas': return { value: 'cash', raw: m.cash, label: 'Kas Akhir' };
+      case 'rt_terawat': return { value: Math.round(m.facAvg) + '%', label: 'Kondisi Fasilitas' };
+      case 'mindmaster': return { value: String(m.riskAvoided), label: 'Risiko Diantisipasi' };
+      default: return { value: String(m.failed), label: 'Urusan Terbengkalai' };
+    }
+  }
   function finishGame() {
     const score = computeScore(S.resources, S.worldState.conflicts);
-    const end = RT.data.endings.find((e) => check(e.when, { score })) || RT.data.endings[RT.data.endings.length - 1];
+    const m = endingMetrics(); const end = { id: pickResult(m) };
     const keys = cfg.statOrder.slice().sort((a, b) => S.resources[b] - S.resources[a]);
     const ids = Object.keys(S.residents).sort((a, b) => bond(S.residents[b]) - bond(S.residents[a]));
     S.ending = { id: end.id, score, best: keys[0], worst: keys[keys.length - 1], closest: ids[0], farthest: ids[ids.length - 1],
       decisions: S.meta.decisions, done: S.urusan.filter((u) => u.status === 'Selesai').length, failed: S.urusan.filter((u) => u.status === 'Gagal').length,
-      stories: S.worldState.storiesDone.length, meetings: Object.values(S.calendar.meetings).filter((m) => m.held).length, final: Object.assign({}, S.resources), conflicts: S.worldState.conflicts };
+      stories: S.worldState.storiesDone.length, meetings: Object.values(S.calendar.meetings).filter((m) => m.held).length, final: Object.assign({}, S.resources), conflicts: S.worldState.conflicts,
+      highlight: resultHighlight(end.id, m) };
     S.meta.phase = 'ended'; S.meta.isGameOver = true;
   }
 
@@ -4248,6 +4393,11 @@ RT.engine = (function () {
     if (!raw) return null;
     if (!raw.meta || !(raw.meta.version >= 2 && raw.meta.version <= cfg.version)) return null; // save demo v1 tidak kompatibel
     S = migrate(raw);
+    /* Save yang tamat dengan ending lama (Chaos/Teladan/Sejahtera/Kompak/Stabil): hitung ulang hasil dari state yang masih utuh */
+    if (S.ending && !RT.data.endings.some((x) => x.id === S.ending.id)) {
+      const m = endingMetrics(); const id = pickResult(m);
+      S.ending = Object.assign({}, S.ending, { legacyId: S.ending.id, id, highlight: resultHighlight(id, m) });
+    }
     RT.save.fresh();
     checkAbandoned();
     return S;
@@ -4440,7 +4590,7 @@ RT.engine = (function () {
     doAction, playStoryMinigame, finishMeeting, playWeekly, beginWeekly, abandonWeekly, pickAduan, sortirSession, kasSession, suratSession, papanSession, bangunSession, nominalBeda, tanggalBeda, residentInteractions, residentInteract, relationsOf, influenceOf, insightValue, insightGroupLabel, INSIGHT_SRC, answerChat, readThread,
     facilityView, facilityAction, familyTime, togglePin, markNotifRead, markAllNotifRead, clearReadNotif, markNotifsWhere, interactionLine, addManualTx, manualTxOptions, txSource, chatWindow,
     activeUrusan, doneUrusan, urusanView, attention, condition, residentIndicators, duesStatus, cashflow, warnings,
-    wangsafBadge, threadMeta, nameOf, resDef, evDef, storyDef, facDef, bond, bondLabel, describeKey, isOpen, storyProgress, computeScore, check, latePayers, infrastructure
+    wangsafBadge, threadMeta, nameOf, resDef, evDef, storyDef, facDef, bond, bondLabel, describeKey, isOpen, storyProgress, computeScore, endingMetrics, pickResult, resultFits, check, latePayers, infrastructure
   };
 })();
 
@@ -5187,7 +5337,7 @@ RT.ui = (function () {
   }
   function scrSetTentang() {
     const html = detailbar('Tentang') + '<div class="body"><section class="card"><div class="sec-title">Ketua RT</div><p class="sm">Setahun menjadi Ketua RT 04, mengambil keputusan ketika kepentingan warga bertabrakan dengan sumber daya yang terbatas.</p>' +
-      '<dl class="kv" style="margin-top:8px"><dt>Versi</dt><dd>v0.9.4 · data simpanan v' + cfg.version + '</dd><dt>Isi</dt><dd>52 minggu · 15 warga · 10 fasilitas</dd></dl></section></div>';
+      '<dl class="kv" style="margin-top:8px"><dt>Versi</dt><dd>v0.9.5 · data simpanan v' + cfg.version + '</dd><dt>Isi</dt><dd>52 minggu · 15 warga · 10 fasilitas</dd></dl></section></div>';
     return { html };
   }
   const GUIDE = [
@@ -5262,28 +5412,30 @@ RT.ui = (function () {
       '<button type="button" class="btn btn--ghost btn--block" data-a="share" data-t="game">Bagikan Game</button>' +
       '</div>';
   }
+  /* ============ Layar akhir v0.9.5: satu layar, ending = badge ============ */
+  function badgeImg(def, cls) {
+    const base = 'assets/ending/' + def.asset;
+    return '<picture class="' + cls + '"><source srcset="' + base + '.svg" type="image/svg+xml"><img src="' + base + '.png" alt="Badge ' + esc(def.title) + '" width="512" height="512" decoding="async" onerror="this.closest(\'picture\').classList.add(\'is-missing\');this.replaceWith(Object.assign(document.createElement(\'span\'),{className:\'end__emoji\',textContent:\'' + def.icon + '\'}))"></picture>';
+  }
+  function highlightText(h) {
+    if (!h) return { value: '', label: '' };
+    if (h.value === 'cash') return { value: bigRp(h.raw), label: h.label };
+    return { value: h.value, label: h.label };
+  }
+  function bigRp(v) { const a = Math.abs(v); const sg = v < 0 ? '−' : ''; if (a >= 1e6) return sg + 'Rp' + (a / 1e6).toFixed(1).replace(/\.0$/, '').replace('.', ',') + ' JT'; if (a >= 1e3) return sg + 'Rp' + Math.round(a / 1e3) + ' RB'; return sg + 'Rp' + a; }
   function screenEnding() {
-    const s = S(); const e = s.ending; const { def, no, total } = endingInfo(e);
-    const tab = V.endTab === 'result' ? 'result' : 'ending';
-    const tabs = '<div class="tabs etabs" role="group" aria-label="Akhir masa jabatan">' + [['ending', 'Ending'], ['result', 'Hasil']].map((t) => '<button type="button" aria-pressed="' + (tab === t[0]) + '" data-a="etab" data-t="' + t[0] + '">' + t[1] + '</button>').join('') + '</div>';
-    const again = '<button class="btn btn--outline btn--block" data-a="to-start">Main lagi</button>';
-    if (tab === 'ending') {
-      const r = 52; const c = 2 * Math.PI * r; const off = c * (1 - e.score / 100);
-      const ring = '<svg class="ring" viewBox="0 0 120 120" role="img" aria-label="Skor ' + e.score + ' dari 100"><circle cx="60" cy="60" r="' + r + '" fill="none" stroke="#efeeec" stroke-width="10"/><circle cx="60" cy="60" r="' + r + '" fill="none" stroke="#191918" stroke-width="10" stroke-linecap="round" stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + off.toFixed(1) + '" transform="rotate(-90 60 60)"/><text x="60" y="60" text-anchor="middle" font-size="30" font-weight="700" fill="#191918">' + e.score + '</text><text x="60" y="78" text-anchor="middle" font-size="11" fill="#615d59">dari 100</text></svg>';
-      return '<div class="full">' + tabs + '<section class="card" style="text-align:center;display:flex;flex-direction:column;gap:8px"><div style="font-size:52px" aria-hidden="true">' + def.icon + '</div><div class="label">Ending #' + no + ' / ' + total + ' · Masa jabatan ' + cfg.startYear + ' selesai</div><h1 class="title-xl">' + esc(def.title) + '</h1><p class="muted">' + esc(def.subtitle) + '</p>' + ring + '<p class="sm" style="text-align:left">' + esc(def.text) + '</p></section>' +
-        '<button class="btn btn--primary btn--block" data-a="share" data-t="ending">Bagikan Ending</button>' + again + '</div>';
-    }
-    const host = gameHost();
-    const card = '<section class="card scard" aria-label="Kartu hasil Ketua RT">' +
-      '<div class="scard__top"><span class="label">Ketua RT</span><span class="scard__per">' + cfg.startYear + ' · ' + cfg.totalWeeks + ' minggu</span></div>' +
-      '<div class="scard__who"><b>Pak ' + esc(s.meta.playerName) + '</b><span>Ketua RT 04</span></div>' +
-      '<div class="scard__end"><span class="scard__icon" aria-hidden="true">' + def.icon + '</span><div><h1 class="scard__title">' + esc(def.title) + '</h1><div class="scard__sub">' + esc(def.subtitle) + '</div></div></div>' +
-      '<dl class="scard__stats"><div><dt>Skor akhir</dt><dd>' + e.score + '<small>/100</small></dd></div><div><dt>Urusan beres</dt><dd>' + e.done + '</dd></div><div><dt>Keputusan</dt><dd>' + e.decisions + '</dd></div><div><dt>Kas akhir</dt><dd>' + shortRp(e.final.cash) + '</dd></div></dl>' +
-      '<div class="scard__foot"><span>Mainkan Ketua RT</span>' + (host ? '<span>' + esc(host) + '</span>' : '') + '</div></section>';
-    return '<div class="full">' + tabs + card + '<p class="muted xs" style="text-align:center">Kartu ini bisa kamu screenshot untuk dibagikan.</p>' +
-      '<section class="card"><div class="sec-title">Ringkasan setahun</div><dl class="kv"><dt>Keputusan diambil</dt><dd>' + e.decisions + '</dd><dt>Urusan selesai</dt><dd>' + e.done + '</dd><dt>Urusan gagal</dt><dd>' + e.failed + '</dd><dt>Story chain tuntas</dt><dd>' + e.stories + '</dd><dt>Rapat digelar</dt><dd>' + e.meetings + '/12</dd><dt>Kas akhir</dt><dd>' + rupiah(e.final.cash) + '</dd>' +
-      '<dt>Terkuat</dt><dd>' + cfg.statLabels[e.best] + '</dd><dt>Perlu perhatian</dt><dd>' + cfg.statLabels[e.worst] + '</dd><dt>Paling dekat</dt><dd>' + esc(E.nameOf(e.closest)) + '</dd><dt>Paling renggang</dt><dd>' + esc(E.nameOf(e.farthest)) + '</dd></dl></section>' +
-      '<button class="btn btn--primary btn--block" data-a="share" data-t="result">Bagikan Hasil</button>' + again + '</div>';
+    const s = S(); const e = s.ending; const { def } = endingInfo(e); const h = highlightText(e.highlight);
+    /* Struktur: badge besar → nama hasil → copy; di bawah (kecil): indikator, closing copy, tombol */
+    return '<div class="full endx' + (def.failure ? ' endx--fail' : '') + '">' +
+      '<p class="endx__kicker endx__a1">' + cfg.totalWeeks + ' minggu selesai</p>' +
+      '<div class="endx__badge endx__a2">' + badgeImg(def, 'endx__pic') + '</div>' +
+      '<h1 class="endx__title endx__a3">' + esc(def.title) + '</h1>' +
+      '<p class="endx__copy endx__a4">' + esc(def.copy) + '</p>' +
+      '<div class="endx__foot endx__a5">' +
+      (h.value ? '<p class="endx__hl"><b class="endx__num">' + esc(h.value) + '</b> <span class="endx__lbl">' + esc(h.label) + '</span></p>' : '') +
+      '<p class="endx__close">' + esc(RT.data.endingClosing) + '</p></div>' +
+      '<div class="endx__cta endx__a6"><button class="btn btn--outline" data-a="to-start">Main lagi</button><button class="btn btn--primary" data-a="share" data-t="ending">Bagikan Hasil</button></div>' +
+      '<p class="endx__who endx__a6">Pak ' + esc(s.meta.playerName) + ' · Ketua RT 04 · ' + cfg.startYear + '</p></div>';
   }
 
   /* ============ Overlay: sheet, konfirmasi, toast ============ */
@@ -5332,55 +5484,162 @@ RT.ui = (function () {
   function shortRp(v) { const a = Math.abs(v); const sg = v < 0 ? '−' : ''; if (a >= 1e6) return sg + 'Rp' + (a / 1e6).toFixed(2).replace(/\.?0+$/, '').replace('.', ',') + ' jt'; if (a >= 1e3) return sg + 'Rp' + Math.round(a / 1e3) + ' rb'; return sg + 'Rp' + a; }
   function gameHost() { try { return gameUrl() ? new URL(gameUrl()).host : ''; } catch (err) { return ''; } }
   function endingInfo(e) {
-    const list = RT.data.endings; const i = list.findIndex((x) => x.id === e.id);
+    const list = RT.data.endings; const i = list.findIndex((x) => x.id === (e && e.id));
     return { def: list[i] || list[list.length - 1], no: (i < 0 ? list.length - 1 : i) + 1, total: list.length };
   }
-  function generateShareContent(type, state) {
-    const url = gameUrl(); const weeks = cfg.totalWeeks;
-    const call = (lead) => (url ? '\n\n' + lead + '\n' + url : '');
-    const pitch = weeks + ' minggu, 15 warga, dan setiap keputusan punya konsekuensi.';
-    const e = state && state.ending;
-    if (type === 'game' || !e) {
-      const text = 'Nemu game tentang jadi Ketua RT.\n\n' + pitch + call('Coba deh:');
-      return { type: 'game', title: 'Ketua RT', url, text, wa: text, plain: 'Nemu game tentang jadi Ketua RT. ' + pitch };
-    }
-    const { def, no, total } = endingInfo(e);
-    if (type === 'ending') {
-      return { type, title: 'Ketua RT · ' + def.title, url,
-        text: 'ENDING #' + no + '/' + total + ': ' + def.title + '\n“' + def.subtitle + '”\n\nGue dapet ending ini setelah ' + weeks + ' minggu jadi Ketua RT. Lu bakal dapet yang mana?' + call('Coba sendiri:'),
-        wa: 'Gue nemu game tentang jadi Ketua RT.\n\n' + pitch + '\n\nGue baru selesai main dan dapat ending:\n*' + def.title + '*' + call('Coba lu:'),
-        plain: 'ENDING #' + no + '/' + total + ': ' + def.title + '. Lu bakal dapet yang mana?' };
-    }
-    return { type: 'result', title: 'Ketua RT · Hasil', url,
-      text: 'Gue baru selesai jadi Ketua RT selama ' + weeks + ' minggu di game Ketua RT.\n\nEnding gue: ' + def.title + '. Skor ' + e.score + '/100, ' + e.done + ' urusan warga beres.\n\nTernyata ngurus warga lebih susah dari yang gue kira.' + call('Coba lu:'),
-      wa: 'Gue nemu game tentang jadi Ketua RT.\n\n' + pitch + '\n\nGue baru selesai main dan dapat:\n*' + def.title + '* (skor ' + e.score + '/100)' + call('Coba lu:'),
-      plain: 'Ending gue: ' + def.title + '. Skor ' + e.score + '/100.' };
-  }
-  const SHARE_COPY = {
-    game: ['Bagikan Ketua RT', 'Coba jadi Ketua RT dan lihat keputusanmu mengubah kehidupan warga.'],
-    ending: ['Bagikan Ending', 'Pesannya sudah terisi. Kamu masih bisa mengubahnya sebelum dikirim.'],
-    result: ['Bagikan Hasil', 'Pesannya sudah terisi. Kartu hasil juga bisa kamu screenshot.']
+  /* Teks berbagi v0.9.5. Opening mengajak mencoba; ending membagikan hasil. Link selalu ke game. */
+  const SHARE_TEXT = {
+    game: 'Gue baru jadi Ketua RT.\nTernyata ngurus warga nggak sesimpel itu.',
+    ending: 'Udah selesai jadi Ketua RT.\nDan ternyata… begini hasilnya.'
   };
-  /* Tanpa ikon merek: aset ikon resmi belum tersedia, jadi tombol memakai label teks. */
-  const ICO = { threads: '', wa: '', link: '' };
-  let shareC = null;
+  function generateShareContent(type, state) {
+    const url = gameUrl(); const t = type === 'ending' && state && state.ending ? 'ending' : 'game';
+    const text = SHARE_TEXT[t];
+    return { type: t, title: 'Ketua RT', url, text, full: text + (url ? '\n\n' + url : '') };
+  }
+  function canNative() { try { return typeof navigator.share === 'function'; } catch (err) { return false; } }
+  let shareC = null; let shot = null; // shot: { blob, file, url } gambar hasil yang sudah dibuat
   function shareSheet(type) {
-    const c = generateShareContent(type, S()); shareC = c;
-    const copy = SHARE_COPY[c.type] || SHARE_COPY.game;
-    const th = 'https://www.threads.com/intent/post?text=' + encodeURIComponent(c.text);
-    const wa = 'https://wa.me/?text=' + encodeURIComponent(c.wa);
-    const ext = ' target="_blank" rel="noopener noreferrer"';
-    let native = false; try { native = typeof navigator.share === 'function'; } catch (err) { native = false; }
-    const body = '<p class="sm">' + esc(copy[1]) + '</p>' +
-      '<div class="share-prev"><span class="label">Pratinjau pesan</span><p>' + esc(c.text) + '</p></div>' +
-      '<div class="share-btns">' +
-      '<a class="btn btn--primary btn--block" href="' + esc(th) + '"' + ext + '>' + ICO.threads + 'Bagikan ke Threads</a>' +
-      '<a class="btn btn--outline btn--block" href="' + esc(wa) + '"' + ext + '>' + ICO.wa + 'Kirim lewat WhatsApp</a>' +
-      '<button type="button" class="btn btn--outline btn--block" data-a="share-copy">' + ICO.link + (c.url ? 'Salin Link' : 'Salin Pesan') + '</button>' +
-      (native ? '<button type="button" class="btn btn--ghost btn--block" data-a="share-native">Opsi lain di perangkat ini…</button>' : '') + '</div>' +
-      '<p class="muted xs">Kalau aplikasinya tidak terbuka, ' + (c.url ? 'salin link' : 'salin pesan') + ' lalu tempel sendiri.</p>';
-    sheet(copy[0], body, [{ label: 'Tutup', run: closeOv }]);
-    const first = $ov.querySelector('.share-btns a'); if (first) first.focus({ preventScroll: true });
+    const c = generateShareContent(type, S()); shareC = c; shot = null;
+    const native = canNative(); const ext = ' target="_blank" rel="noopener noreferrer"';
+    const th = 'https://www.threads.com/intent/post?text=' + encodeURIComponent(c.full);
+    const wa = 'https://wa.me/?text=' + encodeURIComponent(c.full);
+    /* Tanpa share bawaan perangkat (mis. Firefox desktop): tautan Threads & WhatsApp sebagai cadangan */
+    const fallbackLinks = native ? '' : '<a class="btn btn--outline btn--block" href="' + esc(th) + '"' + ext + '>Bagikan ke Threads</a><a class="btn btn--outline btn--block" href="' + esc(wa) + '"' + ext + '>Kirim lewat WhatsApp</a>';
+    const copyBtn = '<button type="button" class="btn btn--outline btn--block" data-a="share-copy">Salin Link</button>';
+    let body;
+    if (c.type === 'ending') {
+      const e = S().ending; const { def } = endingInfo(e);
+      body = '<p class="share-copy">' + esc(c.text).replace(/\n/g, '<br>') + '</p>' +
+        '<figure class="shot"><div class="shot__frame" id="shot-frame"><span class="shot__wait">Menyiapkan gambar hasil…</span></div><figcaption class="xs muted" id="shot-cap" aria-live="polite">Gambar hasil ' + esc(def.title) + ' sedang dibuat.</figcaption></figure>' +
+        '<div class="share-btns">' +
+        (native ? '<button type="button" class="btn btn--primary btn--block" data-a="share-shot" disabled>Bagikan Hasil</button>' : '') +
+        '<button type="button" class="btn ' + (native ? 'btn--outline' : 'btn--primary') + ' btn--block" data-a="share-save" disabled>Simpan Gambar</button>' +
+        fallbackLinks + copyBtn + '</div>';
+    } else {
+      body = '<p class="share-copy">' + esc(c.text).replace(/\n/g, '<br>') + '</p><div class="share-btns">' +
+        (native ? '<button type="button" class="btn btn--primary btn--block" data-a="share-native">Bagikan</button>' : '') + fallbackLinks + copyBtn + '</div>';
+    }
+    sheet('Bagikan', body, [{ label: 'Tutup', run: closeOv }]);
+    const first = $ov.querySelector('.share-btns .btn:not([disabled]), .share-btns a'); if (first) first.focus({ preventScroll: true });
+    if (c.type === 'ending') prepareShot();
+  }
+  /* Dibuat saat lembar dibuka, supaya ketukan "Bagikan Hasil" tetap dianggap aksi langsung pemain oleh browser */
+  function prepareShot() {
+    const e = S().ending; const tok = shareC;
+    drawEndingCard(e, S().meta.playerName).then((res) => {
+      if (shareC !== tok || $ov.hidden) return;
+      shot = res;
+      const fr = document.getElementById('shot-frame'); const cap = document.getElementById('shot-cap');
+      if (fr) fr.innerHTML = '<img src="' + res.url + '" alt="' + esc(res.alt) + '" width="1200" height="630">';
+      if (cap) cap.textContent = '✓ Hasil siap dibagikan. Tekan lama gambar untuk menyimpan kalau tombol tidak berfungsi.';
+      $ov.querySelectorAll('[data-a="share-shot"], [data-a="share-save"]').forEach((b) => { b.disabled = false; });
+    }).catch(() => {
+      if (shareC !== tok) return;
+      const fr = document.getElementById('shot-frame'); const cap = document.getElementById('shot-cap');
+      if (fr) fr.innerHTML = '<span class="shot__wait">Gambar hasil tidak bisa dibuat di browser ini.</span>';
+      if (cap) cap.textContent = 'Kamu tetap bisa berbagi link, atau screenshot layar hasil.';
+      const nb = $ov.querySelector('[data-a="share-shot"]'); if (nb) { nb.disabled = false; nb.dataset.a = 'share-native'; }
+    });
+  }
+  function shareShot() {
+    const c = shareC; if (!shot || !c) return;
+    const data = { files: [shot.file], title: c.title, text: c.full };
+    let canFiles = false; try { canFiles = !!(navigator.canShare && navigator.canShare({ files: [shot.file] })); } catch (err) { canFiles = false; }
+    if (canFiles) {
+      navigator.share(data).then(() => toast('✓ Hasil dibagikan')).catch((err) => { if (!err || err.name !== 'AbortError') { saveShot(); } });
+      return;
+    }
+    /* Berbagi file tidak didukung: simpan gambarnya dulu, lalu bagikan teks + link lewat share perangkat */
+    saveShot();
+    try { navigator.share({ title: c.title, text: c.text, url: c.url }).catch(() => {}); } catch (err) { /* abaikan */ }
+  }
+  function saveShot() {
+    if (!shot) return;
+    try {
+      const a = document.createElement('a'); a.href = shot.url; a.download = shot.name; document.body.appendChild(a); a.click(); a.remove();
+      toast('✓ Gambar hasil disimpan');
+    } catch (err) { toastErr('Gambar tidak bisa diunduh otomatis. Tekan lama gambar untuk menyimpan.'); }
+  }
+  function shareCopy() { const c = shareC || generateShareContent('game', S()); if (c.url) copyText(c.url, '✓ Link berhasil disalin'); else copyText(c.text, '✓ Pesan berhasil disalin'); }
+  function shareNative() {
+    const c = shareC || generateShareContent('game', S());
+    const data = c.url ? { title: c.title, text: c.text, url: c.url } : { title: c.title, text: c.text };
+    try { navigator.share(data).catch((err) => { if (!err || err.name !== 'AbortError') toastErr('Opsi berbagi perangkat tidak tersedia. Pakai Salin Link.'); }); }
+    catch (err) { toastErr('Opsi berbagi perangkat tidak tersedia. Pakai Salin Link.'); }
+  }
+
+  /* ============ Capture hasil akhir: digambar langsung ke Canvas (tanpa library) ============
+     Kartu 1200×630 (rasio Open Graph), dirender 2× = 2400×1260. Isinya dari hasil playthrough yang aktif:
+     nama game, hasil/badge, copy, satu highlight, nama pemain, dan link game. Tidak memotret halaman,
+     jadi tidak ada tombol, modal, atau UI browser yang ikut. */
+  function loadImg(src) {
+    return new Promise((res, rej) => { const im = new Image(); im.decoding = 'async'; im.onload = () => res(im); im.onerror = rej; im.src = src; });
+  }
+  function wrapLines(ctx, text, maxW, maxLines) {
+    const words = String(text).split(/\s+/); const lines = []; let line = '';
+    words.forEach((w) => { const t = line ? line + ' ' + w : w; if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t; });
+    if (line) lines.push(line);
+    if (lines.length > maxLines) { const keep = lines.slice(0, maxLines); keep[maxLines - 1] = keep[maxLines - 1].replace(/\s*\S*$/, '') + '…'; return keep; }
+    return lines;
+  }
+  function fitFont(ctx, text, weight, start, min, maxW) {
+    let size = start; ctx.font = weight + ' ' + size + 'px Inter, system-ui, sans-serif';
+    while (size > min && ctx.measureText(text).width > maxW) { size -= 4; ctx.font = weight + ' ' + size + 'px Inter, system-ui, sans-serif'; }
+    return size;
+  }
+  function rrect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+  async function drawEndingCard(e, playerName) {
+    const { def } = endingInfo(e); const h = highlightText(e.highlight);
+    const W = 2400; const H = 1260; const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d'); if (!ctx) throw new Error('canvas');
+    try { if (document.fonts && document.fonts.load) await Promise.all(['400', '600', '700'].map((w) => document.fonts.load(w + ' 64px Inter'))); } catch (err) { /* pakai font sistem */ }
+    let badge = null;
+    for (const ext of ['svg', 'png']) { try { badge = await loadImg('assets/ending/' + def.asset + '.' + ext); break; } catch (err) { badge = null; } }
+    const INK = '#191918'; const GRAPH = '#615d59'; const PAPER = '#f6f5f4'; const BLUE = '#0075de'; const LINE = 'rgba(0,0,0,0.08)';
+    const ACC = def.failure ? '#e32d14' : BLUE;
+    // latar kertas + kartu putih
+    ctx.fillStyle = PAPER; ctx.fillRect(0, 0, W, H);
+    rrect(ctx, 64, 64, W - 128, H - 128, 48); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = LINE; ctx.stroke();
+    // panel badge (kiri)
+    const PX = 112; const PY = 112; const PS = H - 224;
+    rrect(ctx, PX, PY, PS, PS, 36); ctx.fillStyle = PAPER; ctx.fill();
+    if (badge) {
+      const bw = badge.naturalWidth || 512; const bh = badge.naturalHeight || 512; const sc = Math.min((PS - 96) / bw, (PS - 96) / bh);
+      const dw = bw * sc; const dh = bh * sc; ctx.drawImage(badge, PX + (PS - dw) / 2, PY + (PS - dh) / 2, dw, dh);
+    } else {
+      ctx.font = '400 360px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = INK; ctx.fillText(def.icon, PX + PS / 2, PY + PS / 2 + 10); ctx.textAlign = 'left';
+    }
+    // kolom teks (kanan)
+    const X = PX + PS + 96; const MAXW = W - X - 128; let y = 196;
+    ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+    ctx.fillStyle = BLUE; ctx.font = '700 44px Inter, system-ui, sans-serif'; ctx.fillText('KETUA RT', X, y);
+    const kw = ctx.measureText('KETUA RT').width;
+    ctx.fillStyle = GRAPH; ctx.font = '600 44px Inter, system-ui, sans-serif'; ctx.fillText('  ·  ' + cfg.totalWeeks + ' MINGGU SELESAI', X + kw, y);
+    y += 150;
+    const ts = fitFont(ctx, def.title.toUpperCase(), '700', 132, 84, MAXW); ctx.fillStyle = def.failure ? '#b3200f' : INK; ctx.fillText(def.title.toUpperCase(), X, y);
+    y += Math.round(ts * 0.25) + 72;
+    ctx.fillStyle = GRAPH; ctx.font = '400 54px Inter, system-ui, sans-serif';
+    wrapLines(ctx, def.copy, MAXW, 3).forEach((ln) => { ctx.fillText(ln, X, y); y += 74; });
+    y += 40;
+    if (h.value) {
+      ctx.fillStyle = LINE; ctx.fillRect(X, y - 8, MAXW, 4); y += 132;
+      fitFont(ctx, h.value, '700', 150, 90, MAXW); ctx.fillStyle = ACC; ctx.fillText(h.value, X, y);
+      const nw = ctx.measureText(h.value).width; ctx.fillStyle = INK; ctx.font = '600 52px Inter, system-ui, sans-serif';
+      if (nw + 32 + ctx.measureText(h.label).width <= MAXW) ctx.fillText(h.label, X + nw + 32, y);
+      else { y += 70; ctx.fillText(h.label, X, y); }
+    }
+    // kaki: nama pemain + link game (tetap ada walau aplikasi tujuan membuang teks pesan)
+    ctx.font = '600 40px Inter, system-ui, sans-serif'; ctx.fillStyle = GRAPH;
+    const who = 'Pak ' + String(playerName || '').slice(0, 24) + ' · Ketua RT 04';
+    ctx.fillText(who, X, H - 140);
+    const host = gameHost() || 'ketua-rt.vercel.app'; ctx.fillStyle = BLUE; ctx.font = '700 40px Inter, system-ui, sans-serif';
+    const hw = ctx.measureText(host).width; ctx.fillText(host, W - 128 - hw, H - 140);
+    const blob = await new Promise((res, rej) => { try { cv.toBlob((b) => (b ? res(b) : rej(new Error('blob'))), 'image/png'); } catch (err) { rej(err); } });
+    const name = 'ketua-rt-' + def.asset + '.png';
+    let file = null; try { file = new File([blob], name, { type: 'image/png' }); } catch (err) { file = null; }
+    return { blob, file, name, url: URL.createObjectURL(blob), alt: 'Kartu hasil Ketua RT: ' + def.title + '. ' + def.copy + (h.value ? ' ' + h.value + ' ' + h.label + '.' : '') + ' ' + who + '.' };
   }
   function manualCopy(t) {
     sheet('Salin manual', '<p class="sm">Browser ini tidak mengizinkan salin otomatis. Tekan lama teks di bawah, lalu pilih Salin.</p><label class="label" for="share-manual">' + (shareC && shareC.url ? 'Link game' : 'Pesan') + '</label><textarea id="share-manual" class="input share-manual" readonly rows="3">' + esc(t) + '</textarea>', [{ label: 'Tutup', run: closeOv }]);
@@ -5398,13 +5657,6 @@ RT.ui = (function () {
     };
     try { if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(t).then(done, fallback); return; } } catch (err) { /* jatuh ke fallback */ }
     fallback();
-  }
-  function shareCopy() { const c = shareC || generateShareContent('game', S()); if (c.url) copyText(c.url, 'Link berhasil disalin'); else copyText(c.text, 'Pesan berhasil disalin'); }
-  function shareNative() {
-    const c = shareC || generateShareContent('game', S());
-    const data = c.url ? { title: c.title, text: c.plain, url: c.url } : { title: c.title, text: c.text };
-    try { navigator.share(data).catch((err) => { if (!err || err.name !== 'AbortError') toastErr('Opsi berbagi perangkat tidak tersedia. Pakai tombol di atas.'); }); }
-    catch (err) { toastErr('Opsi berbagi perangkat tidak tersedia. Pakai tombol di atas.'); }
   }
 
   /* ============ Minigame: satu mesin kuis reusable ============ */
@@ -6072,8 +6324,9 @@ RT.ui = (function () {
     share: (el) => shareSheet(el.dataset.t || 'game'),
     'share-copy': shareCopy,
     'share-native': shareNative,
-    etab: (el) => { V.endTab = el.dataset.t; pendingFocus = '[data-a="etab"][data-t="' + el.dataset.t + '"]'; render(false); },
-    'to-start': () => { V.endTab = 'ending'; E.persist(); RT.engine._detach && RT.engine._detach(); resetNav(); startScreen = true; render(true); },
+    'share-shot': shareShot,
+    'share-save': saveShot,
+    'to-start': () => { E.persist(); RT.engine._detach && RT.engine._detach(); resetNav(); startScreen = true; render(true); },
     reset: () => sheet('Hapus auto-save?', '<p class="sm">Progress yang belum disimpan manual akan hilang.</p>', [{ label: 'Hapus & mulai ulang', cls: 'btn--danger', run: () => { closeOv(); E.reset(); resetNav(); render(true); } }, { label: 'Batal', run: closeOv }]),
     setting: (el) => { S().settings[el.dataset.k] = el.dataset.v; E.persist(); applySettings(); render(false); },
     tutorial: () => tutorial(0),
