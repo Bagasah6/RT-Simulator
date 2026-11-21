@@ -1,8 +1,9 @@
 {
-  "headers": [
+  "redirects": [
     {
-      "source": "/assets/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=86400" }]
+      "source": "/(.*)",
+      "destination": "https://ketua-rt.mbagasah.workers.dev/$1",
+      "permanent": true
     }
   ]
 }
